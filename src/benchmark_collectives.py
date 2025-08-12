@@ -478,7 +478,7 @@ def ppermute_benchmark(
     if dcn_size > 1:
 
         @partial(
-            shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, None)
+            shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P("dcn", None)
         )
         def f(x):
             perm = [(i, (i + 1) % dcn_size) for i in range(dcn_size)]
@@ -501,7 +501,7 @@ def ppermute_benchmark(
     # ICI benchmark
     if ici_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, None))
+        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
         def f(x):
             perm = [(i, (i + 1) % ici_size) for i in range(ici_size)]
             return jax.lax.ppermute(x, "ici", perm)

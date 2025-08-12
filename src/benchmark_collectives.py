@@ -74,13 +74,11 @@ def psum_benchmark(
       The measured time for the DCN and ICI benchmarks.
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
-    matrix = jnp.arange(matrix_dim * matrix_dim, dtype=dtype).reshape(
-        matrix_dim, matrix_dim
-    )
+    key = jax.random.PRNGKey(0)
+    matrix = jax.random.normal(key, (matrix_dim, matrix_dim), dtype=dtype)
     dcn_average_time_ms_list = ici_average_time_ms_list = None
     # DCN benchmark
     if dcn_size > 1:
-
         @partial(shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None, None))
         def f(x):
             return jax.lax.psum(x, "dcn")
@@ -208,9 +206,8 @@ def psum_scatter_benchmark(
       The measured time for the DCN and ICI benchmarks.
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
-    matrix = jnp.arange(matrix_dim * matrix_dim, dtype=dtype).reshape(
-        matrix_dim, matrix_dim
-    )
+    key = jax.random.PRNGKey(0)
+    matrix = jax.random.normal(key, (matrix_dim, matrix_dim), dtype=dtype)
     dcn_average_time_ms_list = ici_average_time_ms_list = None
     # DCN benchmark
     if dcn_size > 1:
@@ -335,9 +332,8 @@ def all_gather_benchmark(
     Benchmarks the all_gather collective operation using a correct, implicit method.
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
-    matrix = jnp.arange(matrix_dim * matrix_dim, dtype=dtype).reshape(
-        matrix_dim, matrix_dim
-    )
+    key = jax.random.PRNGKey(0)
+    matrix = jax.random.normal(key, (matrix_dim, matrix_dim), dtype=dtype)
     dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # --- DCN benchmark ---
@@ -474,23 +470,22 @@ def ppermute_benchmark(
       The measured time for the DCN and ICI benchmarks.
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
-    matrix = jnp.arange(matrix_dim * matrix_dim, dtype=dtype).reshape(
-        matrix_dim, matrix_dim
-    )
+    key = jax.random.PRNGKey(0)
+    matrix = jax.random.normal(key, (matrix_dim, matrix_dim), dtype=dtype)
     dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # DCN benchmark
     if dcn_size > 1:
 
         @partial(
-            shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P("dcn", None)
+            shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P("dcn", None)
         )
         def f(x):
             perm = [(i, (i + 1) % dcn_size) for i in range(dcn_size)]
             return jax.lax.ppermute(x, "dcn", perm)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(f)
 
@@ -506,13 +501,13 @@ def ppermute_benchmark(
     # ICI benchmark
     if ici_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P(None, "ici"), out_specs=P(None, "ici"))
+        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
         def f(x):
             perm = [(i, (i + 1) % ici_size) for i in range(ici_size)]
             return jax.lax.ppermute(x, "ici", perm)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P(None, "ici"))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
@@ -607,9 +602,8 @@ def all_to_all_benchmark(
       The measured time for the DCN and ICI benchmarks.
     """
     mesh, _, _ = create_mesh(dcn_size, ici_size)
-    matrix = jnp.arange(matrix_dim * matrix_dim, dtype=dtype).reshape(
-        matrix_dim, matrix_dim
-    )
+    key = jax.random.PRNGKey(0)
+    matrix = jax.random.normal(key, (matrix_dim, matrix_dim), dtype=dtype)
     dcn_average_time_ms_list = ici_average_time_ms_list = None
 
     # DCN benchmark
@@ -639,15 +633,15 @@ def all_to_all_benchmark(
         @partial(
             shard_map,
             mesh=mesh,
-            in_specs=P("ici", None),
-            out_specs=P("ici", None),
+            in_specs=P(None, "ici"),
+            out_specs=P(None, "ici"),
             check_rep=False,
         )
         def f(x):
-            return jax.lax.all_to_all(x, "ici", split_axis=0, concat_axis=0, tiled=True)
+            return jax.lax.all_to_all(x, "ici", split_axis=1, concat_axis=1, tiled=True)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P("ici", None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, "ici"))
         )
         jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(

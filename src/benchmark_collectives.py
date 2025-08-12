@@ -352,7 +352,7 @@ def all_gather_benchmark(
             return jax.lax.all_gather(x, "dcn", tiled=True)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
+            matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(f)
 

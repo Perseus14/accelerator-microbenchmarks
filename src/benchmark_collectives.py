@@ -78,7 +78,7 @@ def psum_benchmark(
     # DCN benchmark
     if dcn_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None))
+        @partial(shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None, None))
         def f(x):
             return jax.lax.psum(x, "dcn")
 
@@ -98,12 +98,12 @@ def psum_benchmark(
     # ICI benchmark
     if ici_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, None))
+        @partial(shard_map, mesh=mesh, in_specs=P(None, "ici"), out_specs=P(None, None))
         def f(x):
             return jax.lax.psum(x, "ici")
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, "ici"))
         )
         jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
@@ -141,7 +141,6 @@ def psum_benchmark_calculate_metrics(
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 * 2
-                / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
@@ -232,12 +231,12 @@ def psum_scatter_benchmark(
     # ICI benchmark
     if ici_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
+        @partial(shard_map, mesh=mesh, in_specs=P(None, "ici"), out_specs=P(None, "ici"))
         def f(x):
             return jax.lax.psum_scatter(x, "ici", tiled=True)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, "ici"))
         )
         jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
@@ -276,7 +275,6 @@ def psum_scatter_benchmark_calculate_metrics(
         dcn_bandwidth_gbyte_s_list = [
                 matrix_size_gbyte
                 * (dcn_size - 1)
-                / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
@@ -346,7 +344,11 @@ def all_gather_benchmark(
     if dcn_size > 1:
 
         @partial(
-            shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None, None)
+            shard_map,
+            mesh=mesh,
+            in_specs=P("dcn", None),
+            out_specs=P(None, None),
+            check_rep=False,
         )
         def f(x):
             return jax.lax.all_gather(x, "dcn", tiled=True)
@@ -507,13 +509,13 @@ def ppermute_benchmark(
     # ICI benchmark
     if ici_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, "ici"))
+        @partial(shard_map, mesh=mesh, in_specs=P(None, "ici"), out_specs=P(None, "ici"))
         def f(x):
             perm = [(i, (i + 1) % ici_size) for i in range(ici_size)]
             return jax.lax.ppermute(x, "ici", perm)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, "ici"))
         )
         jitted_op = jax.jit(f)
         ici_average_time_ms_list = simple_timeit(
@@ -568,7 +570,7 @@ def ppermute_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / ici_size and then it needs
         # to use 1 step
         ici_bandwidth_gbyte_s_list = [
-            matrix_size_gbyte / (ici_average_time_ms / 1e3)
+            matrix_size_gbyte / ici_size / (ici_average_time_ms / 1e3)
             for ici_average_time_ms in ici_average_time_ms_list
         ]
         ici_bandwidth_gbyte_s_statistics = MetricsStatistics(

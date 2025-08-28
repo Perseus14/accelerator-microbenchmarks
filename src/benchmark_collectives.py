@@ -90,6 +90,7 @@ def psum_benchmark(
             dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
+                matrix_dim=matrix_dim,
                 tries=num_runs,
                 task="psum_dcn_op",
                 trace_dir=trace_dir,
@@ -109,6 +110,7 @@ def psum_benchmark(
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
+            matrix_dim=matrix_dim,
             tries=num_runs,
             task="psum_ici_op",
             trace_dir=trace_dir,
@@ -224,6 +226,7 @@ def psum_scatter_benchmark(
             dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
+                matrix_dim=matrix_dim,
                 tries=num_runs,
                 task="psum_scatter_dcn_op",
                 trace_dir=trace_dir,
@@ -243,6 +246,7 @@ def psum_scatter_benchmark(
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
+            matrix_dim=matrix_dim,
             tries=num_runs,
             task="psum_scatter_ici_op",
             trace_dir=trace_dir,
@@ -364,6 +368,7 @@ def all_gather_benchmark(
             dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
+                matrix_dim=matrix_dim,
                 tries=num_runs,
                 task="all_gather_dcn_op",
                 trace_dir=trace_dir,
@@ -389,6 +394,7 @@ def all_gather_benchmark(
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
+            matrix_dim=matrix_dim,
             tries=num_runs,
             task="all_gather_ici_op",
             trace_dir=trace_dir,
@@ -506,6 +512,7 @@ def ppermute_benchmark(
             dcn_average_time_ms_list = simple_timeit(
                 jitted_op,
                 sharded_matrix,
+                matrix_dim=matrix_dim,
                 tries=num_runs,
                 task="ppermute_dcn_op",
                 trace_dir=trace_dir,
@@ -526,6 +533,7 @@ def ppermute_benchmark(
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
+            matrix_dim=matrix_dim,
             tries=num_runs,
             task="ppermute_ici_op",
             trace_dir=trace_dir,
@@ -632,6 +640,7 @@ def all_to_all_benchmark(
         dcn_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
+            matrix_dim=matrix_dim,
             tries=num_runs,
             task="all_to_all_dcn_op",
             trace_dir=trace_dir,
@@ -657,6 +666,7 @@ def all_to_all_benchmark(
         ici_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
+            matrix_dim=matrix_dim,
             tries=num_runs,
             task="all_to_all_ici_op",
             trace_dir=trace_dir,

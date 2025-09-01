@@ -78,12 +78,12 @@ def psum_benchmark(
     # DCN benchmark
     if dcn_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None))
+        @partial(shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P(None, None))
         def f(x):
             return jax.lax.psum(x, "dcn")
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(f)
         for _ in range(num_runs):
@@ -143,7 +143,6 @@ def psum_benchmark_calculate_metrics(
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 * 2
-                / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
@@ -212,13 +211,13 @@ def psum_scatter_benchmark(
     if dcn_size > 1:
 
         @partial(
-            shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P("dcn", None)
+            shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P("dcn", None)
         )
         def f(x):
             return jax.lax.psum_scatter(x, "dcn", tiled=True)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(f)
 
@@ -280,7 +279,6 @@ def psum_scatter_benchmark_calculate_metrics(
         dcn_bandwidth_gbyte_s_list = [
                 matrix_size_gbyte
                 * (dcn_size - 1)
-                / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
@@ -497,14 +495,14 @@ def ppermute_benchmark(
     if dcn_size > 1:
 
         @partial(
-            shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P("dcn", None)
+            shard_map, mesh=mesh, in_specs=P(None, None), out_specs=P("dcn", None)
         )
         def f(x):
             perm = [(i, (i + 1) % dcn_size) for i in range(dcn_size)]
             return jax.lax.ppermute(x, "dcn", perm)
 
         sharded_matrix = jax.device_put(
-            matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
+            matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(f)
 
@@ -565,7 +563,7 @@ def ppermute_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / dcn_size and then it needs
         # to use 1 step
         dcn_bandwidth_gbyte_s_list = [
-                matrix_size_gbyte / dcn_size / (dcn_average_time_ms / 1e3)
+                matrix_size_gbyte / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
         ]
         dcn_bandwidth_gbyte_s_statistics = MetricsStatistics(

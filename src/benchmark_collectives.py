@@ -86,15 +86,14 @@ def psum_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(f)
-        for _ in range(num_runs):
-            dcn_average_time_ms_list = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                matrix_dim=matrix_dim,
-                tries=num_runs,
-                task="psum_dcn_op",
-                trace_dir=trace_dir,
-            )
+        dcn_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            matrix_dim=matrix_dim,
+            tries=num_runs,
+            task="psum_dcn_op",
+            trace_dir=trace_dir,
+        )
 
     # ICI benchmark
     if ici_size > 1:
@@ -221,15 +220,14 @@ def psum_scatter_benchmark(
         )
         jitted_op = jax.jit(f)
 
-        for _ in range(num_runs):
-            dcn_average_time_ms_list = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                matrix_dim=matrix_dim,
-                tries=num_runs,
-                task="psum_scatter_dcn_op",
-                trace_dir=trace_dir,
-            )
+        dcn_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            matrix_dim=matrix_dim,
+            tries=num_runs,
+            task="psum_scatter_dcn_op",
+            trace_dir=trace_dir,
+        )
 
     # ICI benchmark
     if ici_size > 1:
@@ -362,15 +360,14 @@ def all_gather_benchmark(
         )
         jitted_op = jax.jit(f)
 
-        for _ in range(num_runs):
-            dcn_average_time_ms_list = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                matrix_dim=matrix_dim,
-                tries=num_runs,
-                task="all_gather_dcn_op",
-                trace_dir=trace_dir,
-            )
+        dcn_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            matrix_dim=matrix_dim,
+            tries=num_runs,
+            task="all_gather_dcn_op",
+            trace_dir=trace_dir,
+        )
 
     # ICI benchmark
     if ici_size > 1:
@@ -506,15 +503,14 @@ def ppermute_benchmark(
         )
         jitted_op = jax.jit(f)
 
-        for _ in range(num_runs):
-            dcn_average_time_ms_list = simple_timeit(
-                jitted_op,
-                sharded_matrix,
-                matrix_dim=matrix_dim,
-                tries=num_runs,
-                task="ppermute_dcn_op",
-                trace_dir=trace_dir,
-            )
+        dcn_average_time_ms_list = simple_timeit(
+            jitted_op,
+            sharded_matrix,
+            matrix_dim=matrix_dim,
+            tries=num_runs,
+            task="ppermute_dcn_op",
+            trace_dir=trace_dir,
+        )
 
     # ICI benchmark
     if ici_size > 1:

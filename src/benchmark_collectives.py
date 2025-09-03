@@ -57,6 +57,7 @@ def psum_benchmark(
     ici_size: int,
     num_runs: int = 1,
     trace_dir: str = None,
+    warmup_tries: int = 10,
 ) -> Dict[str, Any]:
     """Benchmarks the psum collective operation.
 
@@ -90,6 +91,7 @@ def psum_benchmark(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="psum_dcn_op",
             trace_dir=trace_dir,
@@ -110,6 +112,7 @@ def psum_benchmark(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="psum_ici_op",
             trace_dir=trace_dir,
@@ -188,6 +191,7 @@ def psum_scatter_benchmark(
     ici_size: int,
     num_runs: int = 1,
     trace_dir: str = None,
+    warmup_tries: int = 10,
 ) -> Dict[str, Any]:
     """Benchmarks the psum_scatter collective operation.
 
@@ -219,11 +223,11 @@ def psum_scatter_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(f)
-
         dcn_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="psum_scatter_dcn_op",
             trace_dir=trace_dir,
@@ -244,6 +248,7 @@ def psum_scatter_benchmark(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="psum_scatter_ici_op",
             trace_dir=trace_dir,
@@ -321,6 +326,7 @@ def all_gather_benchmark(
     dtype: jnp.dtype,
     dcn_size: int,
     ici_size: int,
+    warmup_tries: int = 10,
     num_runs: int = 1,
     trace_dir: str = None,
 ) -> Dict[str, Any]:
@@ -359,11 +365,11 @@ def all_gather_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P("dcn", None))
         )
         jitted_op = jax.jit(f)
-
         dcn_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="all_gather_dcn_op",
             trace_dir=trace_dir,
@@ -390,6 +396,7 @@ def all_gather_benchmark(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="all_gather_ici_op",
             trace_dir=trace_dir,
@@ -469,6 +476,7 @@ def ppermute_benchmark(
     ici_size: int,
     num_runs: int = 1,
     trace_dir: str = None,
+    warmup_tries: int = 10,
 ) -> Dict[str, Any]:
     """Benchmarks the ppermute collective operation.
 
@@ -502,11 +510,11 @@ def ppermute_benchmark(
             matrix, jax.sharding.NamedSharding(mesh, P(None, None))
         )
         jitted_op = jax.jit(f)
-
         dcn_average_time_ms_list = simple_timeit(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="ppermute_dcn_op",
             trace_dir=trace_dir,
@@ -528,6 +536,7 @@ def ppermute_benchmark(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="ppermute_ici_op",
             trace_dir=trace_dir,
@@ -599,6 +608,7 @@ def all_to_all_benchmark(
     ici_size: int,
     num_runs: int = 1,
     trace_dir: str = None,
+    warmup_tries: int = 10,
 ) -> Dict[str, Any]:
     """Benchmarks the all_to_all collective operation.
 
@@ -635,6 +645,7 @@ def all_to_all_benchmark(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="all_to_all_dcn_op",
             trace_dir=trace_dir,
@@ -661,6 +672,7 @@ def all_to_all_benchmark(
             jitted_op,
             sharded_matrix,
             matrix_dim=matrix_dim,
+            warmup_tries=warmup_tries,
             tries=num_runs,
             task="all_to_all_ici_op",
             trace_dir=trace_dir,

@@ -19,7 +19,7 @@ import subprocess
 import shutil
 
 
-def simple_timeit(f, *args, matrix_dim=None, warmup_tries = 10, tries=10, task=None, trace_dir=None) -> float:
+def simple_timeit(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task=None, trace_dir=None) -> float:
     """Simple utility to time a function for multiple runs."""
     assert task is not None
 

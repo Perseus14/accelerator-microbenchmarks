@@ -280,7 +280,7 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir")
     xla_dump_dir = benchmark_config.get("xla_dump_dir")
     warmup_tries = benchmark_config.get("warmup_tries")
-    warmup_tries = warmup_tries if warmup_tries is not None else 1000
+    warmup_tries = warmup_tries if warmup_tries is not None else 10
 
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
@@ -403,7 +403,7 @@ def run_benchmark_multithreaded(benchmark_config):
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
     warmup_tries = benchmark_config.get("warmup_tries")
-    warmup_tries = warmup_tries if warmup_tries is not None else 1000
+    warmup_tries = warmup_tries if warmup_tries is not None else 10
 
     # Get the benchmark function
     benchmark_func, calculate_metrics_func = get_benchmark_functions(benchmark_name)

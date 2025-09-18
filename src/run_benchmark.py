@@ -251,7 +251,19 @@ def write_to_csv(csv_path: str, calculate_metrics_results: List[Dict[str, Any]])
             flattened_dict["ici_average_time_ms_list"] = json.dumps(
                 flattened_dict["ici_average_time_ms_list"]
             )
+        if "dcn_average_time_ms_list" in flattened_dict:
+            # Calculate statistics for the timing list.
+            dcn_average_time_ms_statistics = MetricsStatistics(
+                metrics_list=flattened_dict["dcn_average_time_ms_list"],
+                metrics_name="dcn_average_time_ms",
+            ).statistics
+            for key, val in dcn_average_time_ms_statistics.items():
+                flattened_dict["dcn_average_time_ms_" + key] = val
 
+            # Convert list to JSON string for CSV storage.
+            flattened_dict["dcn_average_time_ms_list"] = json.dumps(
+                flattened_dict["dcn_average_time_ms_list"]
+            )
         df = pd.DataFrame(flattened_dict, index=[0])
         return df
 

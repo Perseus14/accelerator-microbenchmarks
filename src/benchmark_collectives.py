@@ -79,7 +79,7 @@ def psum_benchmark(
     # DCN benchmark
     if dcn_size > 1:
 
-        @partial(shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None))
+        @partial(shard_map, mesh=mesh, in_specs=P("dcn", None), out_specs=P(None, None))
         def f(x):
             return jax.lax.psum(x, "dcn")
 
@@ -145,7 +145,6 @@ def psum_benchmark_calculate_metrics(
                 matrix_size_gbyte
                 * (dcn_size - 1)
                 * 2
-                / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list
@@ -283,7 +282,6 @@ def psum_scatter_benchmark_calculate_metrics(
         dcn_bandwidth_gbyte_s_list = [
                 matrix_size_gbyte
                 * (dcn_size - 1)
-                / dcn_size
                 / dcn_size
                 / (dcn_average_time_ms / 1e3)
                 for dcn_average_time_ms in dcn_average_time_ms_list

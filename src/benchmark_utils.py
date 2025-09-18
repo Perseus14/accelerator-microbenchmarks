@@ -126,9 +126,9 @@ def timeit_from_trace(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task
     if trace_dir and not is_local_directory_path(trace_dir):
         tmp_trace_dir = f"{LOCAL_TRACE_DIR}/{trace_name}"
     with jax.profiler.trace(tmp_trace_dir):
-        for _ in range(tries):
+        for i in range(tries):
             jax.devices()  # Force synchronization across devices
-            with jax.profiler.TraceAnnotation(task):
+            with jax.profiler.TraceAnnotation(task, run_id=i):
                 jax.block_until_ready(f(*args))
 
     trace = get_trace(tmp_trace_dir)

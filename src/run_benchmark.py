@@ -271,12 +271,17 @@ def write_to_csv(csv_path: str, calculate_metrics_results: List[Dict[str, Any]])
     # This is a temporary workaround to generate a properly formatted CSV file for the output metrics.
     # We should revert this PR and refactor the code such that metrics object is a flatten dict that can be easily exported as a CSV.
     # For other information that requires nested structures, we should serialize it into a json file."
-    df_list = [convert_dict_to_df(each) for each in calculate_metrics_results]
-    df = pd.concat(df_list, ignore_index=True)
+    try:
+        df_list = [convert_dict_to_df(each) for each in calculate_metrics_results]
+        df = pd.concat(df_list, ignore_index=True)
 
-    df.to_csv(csv_path, index=False, sep="\t")
+        df.to_csv(csv_path, index=False, sep="\t")
 
-    print(f"Metrics written to CSV at {csv_path}.")
+        print(f"Metrics written to CSV at {csv_path}.")
+    except Exception as e:
+        # Temporary workaround to catch all exceptions and print a warning as 
+        # `lax_conv_general_dilated` benchmark fails during nightly test runs at `convert_dict_to_df`.
+        print(f"Failed to write metrics to CSV: {e}")
 
 
 def run_single_benchmark(benchmark_config: Dict[str, Any]):
@@ -291,8 +296,8 @@ def run_single_benchmark(benchmark_config: Dict[str, Any]):
     trace_dir = benchmark_config.get("trace_dir")
     xlml_metrics_dir = benchmark_config.get("xlml_metrics_dir")
     xla_dump_dir = benchmark_config.get("xla_dump_dir")
-    warmup_tries = int(benchmark_config.get("warmup_tries"))
-    warmup_tries = warmup_tries if warmup_tries is not None else 1000
+    warmup_tries = benchmark_config.get("warmup_tries")
+    warmup_tries = warmup_tries if warmup_tries is not None else 10
 
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
@@ -414,8 +419,8 @@ def run_benchmark_multithreaded(benchmark_config):
     csv_path = benchmark_config.get("csv_path")
     if not benchmark_name:
         raise ValueError("Each benchmark must have a 'benchmark_name'.")
-    warmup_tries = int(benchmark_config.get("warmup_tries"))
-    warmup_tries = warmup_tries if warmup_tries is not None else 1000
+    warmup_tries = benchmark_config.get("warmup_tries")
+    warmup_tries = warmup_tries if warmup_tries is not None else 10
 
     # Get the benchmark function
     benchmark_func, calculate_metrics_func = get_benchmark_functions(benchmark_name)

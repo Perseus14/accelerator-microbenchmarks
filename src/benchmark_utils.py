@@ -18,7 +18,7 @@ from collections import defaultdict
 import subprocess
 import shutil
 import time
-from jax.experimental import multi_process_utils 
+from jax.experimental import multihost_utils
 
 
 def simple_timeit(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task=None, trace_dir=None) -> float:
@@ -42,7 +42,7 @@ def simple_timeit(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task=Non
     outcomes_ms = []
     
     # Create the barrier function only if in a multi-host environment.
-    barrier = multi_process_utils.pmake_synchronous_all_hosts_barrier() if jax.process_count() > 1 else None
+    barrier = multihost_util.sync_global_devices('barrier') if jax.process_count() > 1 else None
 
     print(f"Running measurement loop with {tries} tries...")
     for i in range(tries):
@@ -162,7 +162,7 @@ def timeit_from_trace(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task
         tmp_trace_dir = f"{LOCAL_TRACE_DIR}/{trace_name}"
 
     with jax.profiler.trace(tmp_trace_dir):
-        barrier = multi_process_utils.pmake_synchronous_all_hosts_barrier() if jax.process_count() > 1 else None
+        barrier = multihost_util.sync_global_devices('barrier') if jax.process_count() > 1 else None
 
         # This outer annotation will capture the TRUE total time, including barrier waits.
         with jax.profiler.TraceAnnotation(f"{task}_total_loop"):

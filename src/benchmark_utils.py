@@ -17,27 +17,57 @@ import re
 from collections import defaultdict
 import subprocess
 import shutil
+import time
+from jax.experimental import multihost_utils
 
 
-def simple_timeit(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task=None, trace_dir=None) -> float:
+def simple_timeit(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task=None, trace_dir=None, is_multi_host=True) -> float:
     """Simple utility to time a function for multiple runs."""
     assert task is not None
 
     if trace_dir:
-        return timeit_from_trace(f, *args, matrix_dim=matrix_dim, warmup_tries=warmup_tries, tries=tries, task=task, trace_dir=trace_dir)
+        return timeit_from_trace(f, *args, matrix_dim=matrix_dim, warmup_tries=warmup_tries, tries=tries, task=task, trace_dir=trace_dir, is_multi_host=is_multi_host)
 
-    # warmup loop
+    # --- Warmup Loop ---
+    # Create a copy of the data on each iteration to ensure the JIT compiler
+    # is optimized for the correct steady-state operation.
     print(f"Running warmup loop with {warmup_tries} tries...")
     for _ in range(warmup_tries):
-        data = f(*args)
-    jax.block_until_ready(data)
+        args_copy = jax.tree_util.tree_map(lambda x: x.copy(), args)
+        result = f(*args_copy)
+    # Block until the final warmup run is complete on the local host.
+    jax.block_until_ready(result)
+    print("Warmup complete.")
+    # --- Measurement Loop ---
     outcomes_ms = []
-    for _ in range(tries):
-        jax.devices()  # Force synchronization across devices
-        s = datetime.datetime.now()
-        jax.block_until_ready(f(*args))
-        e = datetime.datetime.now()
-        outcomes_ms.append(1000 * (e - s).total_seconds())
+    
+    # Create the barrier function only if in a multi-host environment.
+    barrier = multihost_utils.pmake_synchronous_all_hosts_barrier() if is_multi_host else None
+
+    print(f"Running measurement loop with {tries} tries...")
+    for i in range(tries):
+        # 1. Reset Data: Create a fresh copy of the input for each run to
+        # ensure independence and prevent unwanted compiler optimizations.
+        args_copy = jax.tree_util.tree_map(lambda x: x.copy(), args)
+
+        # 2. Synchronize (Multi-Host Only): Ensure all hosts are ready to start.
+        if barrier:
+            barrier()
+
+        # 3. Time Accurately: Use time.perf_counter for a stable, high-res clock.
+        s_time = time.perf_counter()
+
+        result = f(*args_copy)
+        jax.block_until_ready(result) # Wait for local devices to finish.
+
+        # 4. Synchronize (Multi-Host Only): Wait for ALL hosts to finish the operation.
+        if barrier:
+            barrier()
+
+        e_time = time.perf_counter()
+        
+        outcomes_ms.append(1000 * (e_time - s_time))
+
     return outcomes_ms
 
 
@@ -101,17 +131,22 @@ def is_local_directory_path(dir: str) -> bool:
     return dir.startswith("/") or dir.startswith("./") or dir.startswith("../")
 
 
-def timeit_from_trace(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task=None, trace_dir=None) -> float:
+def timeit_from_trace(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task=None, trace_dir=None, is_multi_host=True) -> float:
     """
     Time a function with jax.profiler and get the run time from the trace.
     """
     LOCAL_TRACE_DIR = "/tmp/microbenchmarks_tmptrace"
 
-    # warmup loop
+    # --- Warmup Loop ---
+    # Create a copy of the data on each iteration to ensure the JIT compiler
+    # is optimized for the correct steady-state operation.
     print(f"Running warmup loop with {warmup_tries} tries...")
     for _ in range(warmup_tries):
-        data = f(*args)
-    jax.block_until_ready(data)
+        args_copy = jax.tree_util.tree_map(lambda x: x.copy(), args)
+        result = f(*args_copy)
+    # Block until the final warmup run is complete on the local host.
+    jax.block_until_ready(result)
+    print("Warmup complete.")
 
     if matrix_dim is not None:
         trace_name = f"{task}_dim_{matrix_dim}"
@@ -125,11 +160,27 @@ def timeit_from_trace(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task
     # If the trace_dir isn't a local path, create one for dumping the trace for parsing and getting metrics.
     if trace_dir and not is_local_directory_path(trace_dir):
         tmp_trace_dir = f"{LOCAL_TRACE_DIR}/{trace_name}"
+
     with jax.profiler.trace(tmp_trace_dir):
-        for i in range(tries):
-            jax.devices()  # Force synchronization across devices
-            with jax.profiler.TraceAnnotation(task, run_id=i):
-                jax.block_until_ready(f(*args))
+        barrier = multihost_utils.pmake_synchronous_all_hosts_barrier() if is_multi_host else None
+
+        # This outer annotation will capture the TRUE total time, including barrier waits.
+        with jax.profiler.TraceAnnotation(f"{task}_total_loop"):
+            for i in range(tries):
+                args_copy = jax.tree_util.tree_map(lambda x: x.copy(), args)
+
+                if barrier:
+                    barrier()
+
+                # This inner annotation still provides per-step timing, but the
+                # "gap" between these steps will be visible in the trace viewer.
+                with jax.profiler.TraceAnnotation(task, run_id=i):
+                    jax.block_until_ready(f(*args_copy))
+
+            # Final barrier to ensure the outer annotation captures the full time
+            # until the absolute last host is done with its final step.
+            if barrier:
+                barrier()
 
     trace = get_trace(tmp_trace_dir)
 

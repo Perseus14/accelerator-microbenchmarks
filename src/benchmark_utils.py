@@ -92,16 +92,11 @@ def get_metrics_from_trace(trace: dict[str, Any], task: str) -> float:
         if "name" in e and event_matcher.match(e["name"]):
             events.append(e)
 
-    events_by_run_id = defaultdict(list)
-    for e in events:
-        run_id = e["args"]["run_id"] if "args" in e and "run_id" in e["args"] else "0"
-        events_by_run_id[run_id].append(e)
     durations_ms = []
     try:
         # Duration is in us.
-        durations_ms = [
-            max([e["dur"] for e in es]) / 1e3 for run_id, es in events_by_run_id.items()
-        ]
+        for e in events:
+            durations_ms.append(e["dur"] / 1e3)
     except KeyError:
         print("KeyError: Key 'dur' not found in the event object")
         raise
@@ -166,12 +161,12 @@ def maybe_write_metrics_file(
     """Writes metrics to a JSONL file to be consumed by the XLML metrics pipeline."""
 
     local_devices = jax.local_devices()
-    devices = jax.devices()
     tpu_worker_id = int(os.getenv("TPU_WORKER_ID", "0"))
+    is_multislice = hasattr(local_devices[0], "slice_index")
 
     # For multi-slice workload, the result is only written by the first host on the first slice (slice_index=0, tpu_worker_id=0).
     # For single-slice workload, the result is only written by the first host (tpu_worker_id=0).
-    if len(local_devices) != len(devices):
+    if is_multislice:
         if local_devices[0].slice_index != 0 or tpu_worker_id != 0:
             return
     else:

@@ -45,6 +45,10 @@ def simple_timeit(f, *args, matrix_dim=None, warmup_tries = 10, tries=10, task=N
 
     print(f"Running measurement loop with {tries} tries...")
     for i in range(tries):
+        # Synchronize (Multi-Host Only): Ensure all hosts are ready to start.
+        if is_multihost:
+            multihost_utils.sync_global_devices(f'start_run_{i}_{task}')
+
         s_time = time.perf_counter()
 
         jax.block_until_ready(f(*args))
@@ -143,10 +147,12 @@ def timeit_from_trace(f, *args, matrix_dim=None, warmup_tries=10, tries=10, task
         tmp_trace_dir = f"{LOCAL_TRACE_DIR}/{trace_name}"
     with jax.profiler.trace(tmp_trace_dir):
         for i in range(tries):
+            if is_multihost:
+                multihost_utils.sync_global_devices(f'start_run_{i}_{task}')
             with jax.profiler.TraceAnnotation(task):
                 jax.block_until_ready(f(*args))
             if is_multihost:
-                    multihost_utils.sync_global_devices(f'end_run_{i}_{task}')
+                multihost_utils.sync_global_devices(f'end_run_{i}_{task}')
     trace = get_trace(tmp_trace_dir)
 
     if trace_full_dir != tmp_trace_dir:

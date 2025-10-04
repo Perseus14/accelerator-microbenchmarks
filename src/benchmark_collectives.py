@@ -281,7 +281,7 @@ def psum_scatter_benchmark(
         results["dcn_time_ms_list"] = benchmark_collective(
             benchmark_name="psum_scatter", jax_op=jax.lax.psum_scatter, mesh=mesh,
             matrix=matrix, matrix_dim=matrix_dim, axis_name="dcn",
-            in_specs=P("dcn", None), out_specs=P("dcn", None),
+            in_specs=P(None, None), out_specs=P("dcn", None),
             jax_op_kwargs=psum_scatter_kwargs, num_runs=num_runs,
             warmup_tries=warmup_tries, trace_dir=trace_dir,
         )
@@ -319,7 +319,6 @@ def psum_scatter_benchmark_calculate_metrics(
         dcn_bandwidth_gbyte_s_list = [
                 matrix_size_gbyte
                 * (dcn_size - 1)
-                / dcn_size
                 / dcn_size
                 / (dcn_time_ms / 1e3)
                 for dcn_time_ms in dcn_time_ms_list
@@ -404,7 +403,7 @@ def all_gather_benchmark(
         results["ici_time_ms_list"] = benchmark_collective(
             benchmark_name="all_gather", jax_op=jax.lax.all_gather, mesh=mesh,
             matrix=matrix, matrix_dim=matrix_dim, axis_name="ici",
-            in_specs=P("ici", None), out_specs=P(None, None), check_rep=False,
+            in_specs=P(None, "ici"), out_specs=P(None, None), check_rep=False,
             jax_op_kwargs=all_gather_kwargs, num_runs=num_runs,
             warmup_tries=warmup_tries, trace_dir=trace_dir,
         )
@@ -507,7 +506,7 @@ def ppermute_benchmark(
         results["dcn_time_ms_list"] = benchmark_collective(
             benchmark_name="ppermute", jax_op=jax.lax.ppermute, mesh=mesh,
             matrix=matrix, matrix_dim=matrix_dim, axis_name="dcn",
-            in_specs=P("dcn", None), out_specs=P("dcn", None),
+            in_specs=P(None, None), out_specs=P("dcn", None),
             jax_op_kwargs={"perm": dcn_perm}, num_runs=num_runs,
             warmup_tries=warmup_tries, trace_dir=trace_dir,
         )
@@ -544,7 +543,7 @@ def ppermute_benchmark_calculate_metrics(
         # each sharded matrix size is matrix_size_gbyte / dcn_size and then it needs
         # to use 1 step
         dcn_bandwidth_gbyte_s_list = [
-                matrix_size_gbyte / dcn_size / (dcn_time_ms / 1e3)
+                matrix_size_gbyte / (dcn_time_ms / 1e3)
                 for dcn_time_ms in dcn_time_ms_list
         ]
         generate_metrics_statistics(
@@ -612,7 +611,7 @@ def all_to_all_benchmark(
         results["dcn_time_ms_list"] = benchmark_collective(
             benchmark_name="all_to_all", jax_op=jax.lax.all_to_all, mesh=mesh,
             matrix=matrix, matrix_dim=matrix_dim, axis_name="dcn",
-            in_specs=P("dcn", None), out_specs=P("dcn", None),
+            in_specs=P(None, None), out_specs=P(None, None), check_rep=False,
             jax_op_kwargs=all_to_all_kwargs, num_runs=num_runs,
             warmup_tries=warmup_tries, trace_dir=trace_dir,
         )
@@ -648,7 +647,6 @@ def all_to_all_benchmark_calculate_metrics(
         dcn_bandwidth_gbyte_s_list = [
                 matrix_size_gbyte
                 * (dcn_size - 1)
-                / dcn_size
                 / dcn_size
                 / (dcn_time_ms / 1e3)
                 for dcn_time_ms in dcn_time_ms_list
